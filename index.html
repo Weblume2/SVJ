@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>John Smith | Elite Real Estate</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#0a0a0a',
+                            charcoal: '#171717',
+                            gold: '#D4AF37',
+                            goldhover: '#b5952f',
+                            light: '#f5f5f5'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Animations & Utilities */
+        body { background-color: #0a0a0a; color: #f5f5f5; overflow-x: hidden; }
+        
+        .hero-overlay {
+            background: linear-gradient(to bottom, rgba(10,10,10,0.3) 0%, rgba(10,10,10,0.9) 100%);
+        }
+
+        /* Scroll Reveal Animation */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Hover Zooms */
+        .img-zoom-container { overflow: hidden; }
+        .img-zoom { transition: transform 0.6s ease; }
+        .group:hover .img-zoom { transform: scale(1.08); }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #D4AF37; }
+        ::-webkit-scrollbar-thumb:hover { background: #b5952f; }
+
+        /* Hide Scrollbar for Gallery */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Disable background interaction when modal open */
+        .no-scroll { overflow: hidden; }
+
+        /* Loader */
+        #loader {
+            position: fixed; inset: 0; background: #0a0a0a; z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.5s ease;
+        }
+        .spinner {
+            border: 4px solid rgba(212, 175, 55, 0.3);
+            border-top: 4px solid #D4AF37;
+            border-radius: 50%;
+            width: 50px; height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="antialiased font-sans">
+
+    <!-- Initial Loader -->
+    <div id="loader">
+        <div class="flex flex-col items-center">
+            <div class="spinner mb-4"></div>
+            <h2 class="text-brand-gold font-bold tracking-widest uppercase text-sm">Loading Premium Assets</h2>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 transition-all duration-300" id="navbar">
+        <div class="absolute inset-0 bg-brand-dark/90 backdrop-blur-md border-b border-white/10 shadow-lg"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex-shrink-0 cursor-pointer" onclick="navigate('home')">
+                    <span class="text-2xl font-extrabold text-white tracking-tighter">JOHN<span class="text-brand-gold">SMITH</span></span>
+                </div>
+                <div class="hidden md:flex space-x-8 items-center">
+                    <a href="#" onclick="navigate('home')" class="text-gray-300 hover:text-brand-gold font-semibold transition">Home</a>
+                    <a href="#" onclick="navigate('listings')" class="text-gray-300 hover:text-brand-gold font-semibold transition">Listings</a>
+                    <button onclick="scrollToContact()" class="bg-brand-gold text-brand-dark px-6 py-2 rounded font-bold hover:bg-brand-goldhover transition shadow-[0_0_15px_rgba(212,175,55,0.4)] hover:shadow-[0_0_25px_rgba(212,175,55,0.6)]">
+                        Book a Call
+                    </button>
+                </div>
+                <!-- Mobile menu button -->
+                <div class="md:hidden flex items-center relative">
+                    <button id="mobile-menu-btn" class="text-gray-300 hover:text-white focus:outline-none">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden absolute w-full bg-brand-dark border-b border-white/10">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#" onclick="navigate('home'); toggleMobileMenu();" class="block px-3 py-2 text-base font-medium text-white hover:text-brand-gold">Home</a>
+                <a href="#" onclick="navigate('listings'); toggleMobileMenu();" class="block px-3 py-2 text-base font-medium text-white hover:text-brand-gold">Listings</a>
+                <a href="#" onclick="scrollToContact(); toggleMobileMenu();" class="block px-3 py-2 text-base font-medium text-brand-gold">Book a Call</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-24 right-4 bg-brand-gold text-brand-dark px-6 py-3 rounded shadow-lg font-bold transform translate-x-full transition-transform duration-300 z-50">
+        Message sent successfully!
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VIEW: HOMEPAGE -->
+    <!-- ========================================== -->
+    <main id="view-home" class="block">
+        
+        <!-- 1. Hero Section -->
+        <section class="relative h-screen flex items-center justify-center overflow-hidden">
+            <div class="absolute inset-0 z-0">
+                <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=2000" alt="Luxury Home" class="w-full h-full object-cover" />
+                <div class="absolute inset-0 hero-overlay"></div>
+            </div>
+            
+            <div class="relative z-10 text-center px-4 max-w-5xl mx-auto mt-20">
+                <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-6 tracking-tight leading-tight reveal">
+                    TURNING DREAMS INTO <span class="text-brand-gold">ADDRESSES</span>
+                </h1>
+                <p class="text-xl md:text-2xl text-gray-300 mb-10 font-light reveal delay-100">
+                    Meet the agent who outworks the market.
+                </p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4 reveal delay-200">
+                    <button onclick="navigate('listings')" class="bg-brand-gold text-brand-dark px-8 py-4 rounded font-bold text-lg hover:bg-brand-goldhover transition transform hover:-translate-y-1">
+                        View Listings
+                    </button>
+                    <button onclick="scrollToContact()" class="border border-white text-white px-8 py-4 rounded font-bold text-lg hover:bg-white hover:text-brand-dark transition transform hover:-translate-y-1">
+                        Book a Consultation
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Agent Intro Section -->
+        <section class="py-24 bg-brand-charcoal">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col lg:flex-row items-center gap-16">
+                    <div class="w-full lg:w-1/2 reveal">
+                        <div class="relative">
+                            <div class="absolute inset-0 border-2 border-brand-gold transform translate-x-4 translate-y-4"></div>
+                            <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800" alt="John Smith" class="relative z-10 w-full h-auto object-cover grayscale hover:grayscale-0 transition duration-500 shadow-2xl">
+                        </div>
+                    </div>
+                    <div class="w-full lg:w-1/2 reveal delay-100">
+                        <h2 class="text-brand-gold font-bold tracking-widest uppercase mb-2">The Standard of Excellence</h2>
+                        <h3 class="text-4xl font-extrabold text-white mb-6">JOHN SMITH</h3>
+                        <p class="text-gray-400 text-lg leading-relaxed mb-8">
+                            "John is a results-driven real estate expert known for his relentless work ethic and unmatched client dedication. With years of experience and a passion for delivering results, he doesn't just sell homes — he builds futures."
+                        </p>
+                        <div class="font-[Brush_Script_MT,cursive] text-4xl text-white opacity-80">
+                            John Smith
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Social Proof / Achievements -->
+        <section class="py-20 bg-brand-dark border-y border-white/5">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Stat 1 -->
+                    <div class="text-center p-6 border border-white/10 rounded-lg hover:border-brand-gold transition duration-300 group reveal">
+                        <i class="fas fa-trophy text-4xl text-brand-gold mb-4 group-hover:scale-110 transition"></i>
+                        <h4 class="text-2xl font-bold text-white mb-2">Top 1%</h4>
+                        <p class="text-gray-400">Real Estate Agent 2024</p>
+                    </div>
+                    <!-- Stat 2 -->
+                    <div class="text-center p-6 border border-white/10 rounded-lg hover:border-brand-gold transition duration-300 group reveal delay-100">
+                        <i class="fas fa-dollar-sign text-4xl text-brand-gold mb-4 group-hover:scale-110 transition"></i>
+                        <h4 class="text-2xl font-bold text-white mb-2">$50M+</h4>
+                        <p class="text-gray-400">Property Sold</p>
+                    </div>
+                    <!-- Stat 3 -->
+                    <div class="text-center p-6 border border-white/10 rounded-lg hover:border-brand-gold transition duration-300 group reveal delay-200">
+                        <i class="fas fa-handshake text-4xl text-brand-gold mb-4 group-hover:scale-110 transition"></i>
+                        <h4 class="text-2xl font-bold text-white mb-2">200+</h4>
+                        <p class="text-gray-400">Happy Clients</p>
+                    </div>
+                    <!-- Stat 4 -->
+                    <div class="text-center p-6 border border-white/10 rounded-lg hover:border-brand-gold transition duration-300 group reveal delay-300">
+                        <i class="fas fa-star text-4xl text-brand-gold mb-4 group-hover:scale-110 transition"></i>
+                        <h4 class="text-2xl font-bold text-white mb-2">5-Star</h4>
+                        <p class="text-gray-400">Rated Across Platforms</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Featured Properties -->
+        <section class="py-24 bg-brand-charcoal">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-end mb-12 reveal">
+                    <div>
+                        <h2 class="text-brand-gold font-bold tracking-widest uppercase mb-2">Exclusive Portfolio</h2>
+                        <h3 class="text-4xl font-extrabold text-white">FEATURED LISTINGS</h3>
+                    </div>
+                    <button onclick="navigate('listings')" class="hidden md:block text-white hover:text-brand-gold font-semibold transition border-b border-transparent hover:border-brand-gold pb-1">
+                        View All Listings <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8" id="featured-properties-container">
+                    <!-- Populated by JS -->
+                </div>
+                
+                <div class="mt-10 text-center md:hidden reveal">
+                    <button onclick="navigate('listings')" class="border border-brand-gold text-brand-gold px-8 py-3 rounded font-bold w-full">
+                        View All Listings
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. Why Choose This Agent -->
+        <section class="py-24 bg-brand-dark">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="text-4xl font-extrabold text-white mb-16 reveal">WHY WORK WITH ME?</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-12">
+                    <div class="reveal">
+                        <div class="w-16 h-16 mx-auto bg-brand-charcoal rounded-full flex items-center justify-center mb-6 border border-white/10">
+                            <i class="fas fa-fire text-2xl text-brand-gold"></i>
+                        </div>
+                        <h4 class="text-xl font-bold text-white mb-3">Relentless Work Ethic</h4>
+                        <p class="text-gray-400 text-sm">I don't stop until the deal is closed. 24/7 dedication to getting you the best result.</p>
+                    </div>
+                    <div class="reveal delay-100">
+                        <div class="w-16 h-16 mx-auto bg-brand-charcoal rounded-full flex items-center justify-center mb-6 border border-white/10">
+                            <i class="fas fa-chart-line text-2xl text-brand-gold"></i>
+                        </div>
+                        <h4 class="text-xl font-bold text-white mb-3">Market Expertise</h4>
+                        <p class="text-gray-400 text-sm">Deep, data-driven understanding of local trends to price perfectly and buy smart.</p>
+                    </div>
+                    <div class="reveal delay-200">
+                        <div class="w-16 h-16 mx-auto bg-brand-charcoal rounded-full flex items-center justify-center mb-6 border border-white/10">
+                            <i class="fas fa-gavel text-2xl text-brand-gold"></i>
+                        </div>
+                        <h4 class="text-xl font-bold text-white mb-3">Negotiation Power</h4>
+                        <p class="text-gray-400 text-sm">Aggressive but professional negotiation strategies to maximize your leverage.</p>
+                    </div>
+                    <div class="reveal delay-300">
+                        <div class="w-16 h-16 mx-auto bg-brand-charcoal rounded-full flex items-center justify-center mb-6 border border-white/10">
+                            <i class="fas fa-user-shield text-2xl text-brand-gold"></i>
+                        </div>
+                        <h4 class="text-xl font-bold text-white mb-3">Client-First Approach</h4>
+                        <p class="text-gray-400 text-sm">Total transparency, constant communication, and protecting your interests above all.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. Testimonials -->
+        <section class="py-24 bg-brand-charcoal border-y border-white/5">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-center text-3xl font-extrabold text-white mb-16 reveal">CLIENT SUCCESS</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-brand-dark p-8 rounded border border-white/10 reveal relative">
+                        <i class="fas fa-quote-left text-4xl text-white/5 absolute top-4 left-4"></i>
+                        <div class="flex text-brand-gold mb-4">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
+                        <p class="text-gray-300 italic mb-6">"Best agent I've ever worked with. John is incredibly driven and sold our house in 5 days above asking price. Pure professionalism."</p>
+                        <p class="font-bold text-white">- Sarah Jenkins</p>
+                    </div>
+                    <div class="bg-brand-dark p-8 rounded border border-white/10 reveal delay-100 relative">
+                        <i class="fas fa-quote-left text-4xl text-white/5 absolute top-4 left-4"></i>
+                        <div class="flex text-brand-gold mb-4">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
+                        <p class="text-gray-300 italic mb-6">"If you want someone who actually hustles for you, call John. He found us our dream home and negotiated a brilliant deal. Highly recommended."</p>
+                        <p class="font-bold text-white">- Mark & Lisa Davies</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. Call to Action Banner -->
+        <section class="py-20 bg-brand-gold text-brand-dark text-center px-4 relative overflow-hidden">
+            <!-- Decorative BG elements -->
+            <div class="absolute top-0 left-0 w-full h-full opacity-10" style="background-image: radial-gradient(#000 1px, transparent 1px); background-size: 20px 20px;"></div>
+            
+            <div class="relative z-10 reveal">
+                <h2 class="text-4xl md:text-5xl font-extrabold mb-6 text-brand-dark uppercase">Ready to Buy or Sell?</h2>
+                <p class="text-xl font-semibold mb-10 max-w-2xl mx-auto text-brand-dark/80">Don't settle for average. Work with the agent who outworks the market.</p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <button onclick="scrollToContact()" class="bg-brand-dark text-white px-8 py-4 rounded font-bold text-lg hover:bg-brand-charcoal transition shadow-xl transform hover:-translate-y-1">
+                        Book a Call
+                    </button>
+                    <button onclick="scrollToContact()" class="border-2 border-brand-dark text-brand-dark px-8 py-4 rounded font-bold text-lg hover:bg-brand-dark hover:text-white transition shadow-xl transform hover:-translate-y-1">
+                        Get a Free Valuation
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- VIEW: LISTINGS -->
+    <!-- ========================================== -->
+    <main id="view-listings" class="hidden pt-28 pb-24 bg-brand-dark min-h-screen">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16 reveal">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-4">AVAILABLE PROPERTIES</h1>
+                <p class="text-gray-400 text-lg">Premium real estate opportunities curated for you.</p>
+            </div>
+
+            <!-- Grid populated by JS -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="all-listings-container">
+            </div>
+        </div>
+    </main>
+
+    <!-- ========================================== -->
+    <!-- VIEW: PROPERTY DETAIL -->
+    <!-- ========================================== -->
+    <main id="view-detail" class="hidden pt-24 pb-24 bg-brand-dark min-h-screen">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <button onclick="navigate('listings')" class="text-brand-gold hover:text-white transition mb-8 flex items-center font-bold">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Listings
+            </button>
+
+            <div id="detail-content">
+                <!-- Populated dynamically by JS -->
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ========================================== -->
+    <!-- LIGHTBOX MODAL -->
+    <!-- ========================================== -->
+    <div id="lightbox" class="fixed inset-0 z-[9999] bg-brand-dark/95 hidden flex-col items-center justify-center opacity-0 transition-opacity duration-300">
+        <!-- Top Bar -->
+        <div class="absolute top-0 w-full p-6 flex justify-between items-center z-50 bg-gradient-to-b from-black/80 to-transparent">
+            <div class="text-white font-bold tracking-widest text-sm uppercase bg-black/50 px-4 py-1 rounded-full" id="lightbox-counter">1 / 5</div>
+            <button onclick="closeLightbox()" class="text-white hover:text-brand-gold text-4xl transition focus:outline-none"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <!-- Nav Arrows -->
+        <button onclick="changeLightboxImage(-1)" class="absolute left-2 md:left-8 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-white text-5xl transition z-50 focus:outline-none bg-black/20 hover:bg-black/50 w-16 h-16 rounded-full flex items-center justify-center"><i class="fas fa-chevron-left pr-1"></i></button>
+        <button onclick="changeLightboxImage(1)" class="absolute right-2 md:right-8 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-white text-5xl transition z-50 focus:outline-none bg-black/20 hover:bg-black/50 w-16 h-16 rounded-full flex items-center justify-center"><i class="fas fa-chevron-right pl-1"></i></button>
+        
+        <!-- Image Container -->
+        <div class="relative w-full h-full flex items-center justify-center overflow-hidden" id="lightbox-container">
+            <img id="lightbox-img" src="" class="max-w-[95%] max-h-[90vh] object-contain cursor-zoom-in transition-transform duration-200" alt="Full Screen View">
+        </div>
+
+        <!-- Instructions -->
+        <div class="absolute bottom-8 text-white/40 text-xs uppercase tracking-widest pointer-events-none hidden md:block bg-black/50 px-4 py-2 rounded-full">
+            Scroll to zoom • Drag to pan • Arrows to navigate
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SHARED FOOTER & CONTACT -->
+    <!-- ========================================== -->
+    <footer id="contact-section" class="bg-brand-charcoal border-t border-white/10 pt-20 pb-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-16 mb-16">
+                
+                <!-- Contact Form -->
+                <div>
+                    <h3 class="text-3xl font-extrabold text-white mb-6">GET IN TOUCH</h3>
+                    <p class="text-gray-400 mb-8">Whether you're looking to buy, sell, or just want a market valuation, fill out the form below and I'll be in touch immediately.</p>
+                    
+                    <form onsubmit="handleFormSubmit(event)" class="space-y-4">
+                        <div>
+                            <input type="text" placeholder="Full Name" required class="w-full bg-brand-dark border border-white/10 p-4 rounded text-white focus:outline-none focus:border-brand-gold transition">
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <input type="email" placeholder="Email Address" required class="w-full bg-brand-dark border border-white/10 p-4 rounded text-white focus:outline-none focus:border-brand-gold transition">
+                            <input type="tel" placeholder="Phone Number" required class="w-full bg-brand-dark border border-white/10 p-4 rounded text-white focus:outline-none focus:border-brand-gold transition">
+                        </div>
+                        <div>
+                            <textarea placeholder="How can I help you?" rows="4" required class="w-full bg-brand-dark border border-white/10 p-4 rounded text-white focus:outline-none focus:border-brand-gold transition resize-none"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-brand-gold text-brand-dark font-bold text-lg py-4 rounded hover:bg-brand-goldhover transition uppercase tracking-wide">
+                            Send Message
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Contact Info & Links -->
+                <div class="flex flex-col justify-center">
+                    <div class="mb-10">
+                        <span class="text-3xl font-extrabold text-white tracking-tighter block mb-6">JOHN<span class="text-brand-gold">SMITH</span></span>
+                        
+                        <div class="space-y-4 text-gray-300">
+                            <p class="flex items-center"><i class="fas fa-phone text-brand-gold w-6"></i> +27 82 123 4567</p>
+                            <p class="flex items-center"><i class="fas fa-envelope text-brand-gold w-6"></i> john@smithrealestate.com</p>
+                            <p class="flex items-center"><i class="fas fa-map-marker-alt text-brand-gold w-6"></i> Umhlanga Rocks, KwaZulu-Natal</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-white font-bold mb-4 uppercase tracking-widest text-sm">Connect</h4>
+                        <div class="flex space-x-4">
+                            <a href="#" class="w-10 h-10 rounded-full bg-brand-dark flex items-center justify-center text-white hover:bg-brand-gold hover:text-brand-dark transition"><i class="fab fa-instagram"></i></a>
+                            <a href="#" class="w-10 h-10 rounded-full bg-brand-dark flex items-center justify-center text-white hover:bg-brand-gold hover:text-brand-dark transition"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" class="w-10 h-10 rounded-full bg-brand-dark flex items-center justify-center text-white hover:bg-brand-gold hover:text-brand-dark transition"><i class="fab fa-linkedin-in"></i></a>
+                            <!-- WhatsApp Bonus -->
+                            <a href="#" class="w-10 h-10 rounded-full bg-brand-dark flex items-center justify-center text-white hover:bg-[#25D366] transition"><i class="fab fa-whatsapp"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center text-gray-500 text-sm">
+                <p>&copy; 2026 John Smith Real Estate. All rights reserved.</p>
+                <div class="flex space-x-4 mt-4 md:mt-0">
+                    <a href="#" class="hover:text-white transition">Privacy Policy</a>
+                    <a href="#" class="hover:text-white transition">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========================================== -->
+    <!-- APPLICATION LOGIC -->
+    <!-- ========================================== -->
+    <script>
+        // ==============================================================================
+        // 🛑 🛑 🛑  DATABASE START: EDIT YOUR PROPERTY LISTINGS HERE  🛑 🛑 🛑
+        // ==============================================================================
+        //
+        // HOW TO ADD A NEW LISTING:
+        // 1. Copy an existing block from the opening '{' to the comma '},'.
+        // 2. Paste it at the bottom of the list.
+        // 3. Change the 'id' to a new, unique number.
+        // 4. Swap the text, price, and image links.
+        //
+        // ==============================================================================
+        const properties = [
+            {
+                id: 1,
+                title: "Modern Oceanfront Villa",
+                address: "12 Ocean View Drive, Umhlanga",
+                price: "R 18,500,000",
+                beds: 5, baths: 4.5, garages: 3, sqmt: 850,
+                img: "https://images.unsplash.com/photo-1613490908578-812e9b08465b?auto=format&fit=crop&q=80&w=800",
+                gallery: [
+                    "https://images.unsplash.com/photo-1613490908578-812e9b08465b?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1600"
+                ],
+                featured: true,
+                desc: "This stunning modern home offers panoramic ocean views, open-plan living spaces, and luxury finishes throughout. Features a rim-flow pool, state-of-the-art security, and a private cinema."
+            },
+            {
+                id: 2,
+                title: "Architectural Masterpiece",
+                address: "45 Executive Ridge, La Lucia",
+                price: "R 12,250,000",
+                beds: 4, baths: 4, garages: 2, sqmt: 600,
+                img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800",
+                gallery: [
+                    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1600"
+                ],
+                featured: true,
+                desc: "A masterpiece of contemporary design. Floor-to-ceiling glass, floating staircases, and a gourmet chef's kitchen. Perfect for the executive family."
+            },
+            {
+                id: 3,
+                title: "Luxury Estate Compound",
+                address: "88 Signature Golf Estate",
+                price: "R 24,000,000",
+                beds: 6, baths: 6, garages: 4, sqmt: 1200,
+                img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800",
+                gallery: [
+                    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1613490908578-812e9b08465b?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1502672260266-1c1c2b5042ce?auto=format&fit=crop&q=80&w=1600"
+                ],
+                featured: true,
+                desc: "Unrivaled luxury on the golf course. Includes a separate guest cottage, wine cellar, gym, and expansive manicured gardens."
+            },
+            {
+                id: 4,
+                title: "Penthouse Suite",
+                address: "The Pearls, Umhlanga",
+                price: "R 15,000,000",
+                beds: 3, baths: 3, garages: 2, sqmt: 400,
+                img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800",
+                gallery: [
+                    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1502672260266-1c1c2b5042ce?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&q=80&w=1600"
+                ],
+                featured: false,
+                desc: "Sky-high luxury living with 270-degree Indian Ocean views. Direct beach access and world-class building amenities."
+            },
+            {
+                id: 5,
+                title: "Eco-Modern Retreat",
+                address: "14 Forest Drive, Zimbali",
+                price: "R 9,800,000",
+                beds: 4, baths: 3, garages: 2, sqmt: 550,
+                img: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=800",
+                gallery: [
+                    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&q=80&w=1600"
+                ],
+                featured: false,
+                desc: "Blends seamlessly into the coastal forest. Off-grid capabilities, koi ponds, and massive outdoor entertainment decks."
+            },
+            {
+                id: 6,
+                title: "Classic Contemporary",
+                address: "22 Horizon Close, Ballito",
+                price: "R 7,500,000",
+                beds: 4, baths: 2.5, garages: 2, sqmt: 420,
+                img: "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?auto=format&fit=crop&q=80&w=800",
+                gallery: [
+                    "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1600",
+                    "https://images.unsplash.com/photo-1613490908578-812e9b08465b?auto=format&fit=crop&q=80&w=1600"
+                ],
+                featured: false,
+                desc: "Perfect family home in a secure estate. Modern kitchen, spacious garden for kids, and a lovely pool area."
+            }
+        ];
+
+        // ==============================================================================
+        // 🛑 🛑 🛑  DATABASE END: DO NOT EDIT JAVASCRIPT BELOW THIS LINE  🛑 🛑 🛑
+        // ==============================================================================
+
+        // --- Lightbox State ---
+        let currentLightboxImages = [];
+        let currentImageIndex = 0;
+        let imgScale = 1;
+        let isDragging = false;
+        let startX, startY, translateX = 0, translateY = 0;
+
+        // --- Init & UI Logic ---
+        document.addEventListener("DOMContentLoaded", () => {
+            // Remove Loader
+            setTimeout(() => {
+                const loader = document.getElementById('loader');
+                loader.style.opacity = '0';
+                setTimeout(() => loader.remove(), 500);
+            }, 800);
+
+            renderFeaturedProperties();
+            renderAllProperties();
+            initScrollReveal();
+            setupNavbarScroll();
+        });
+
+        // Generate Card HTML
+        function generatePropertyCard(prop) {
+            return `
+                <div class="bg-brand-dark rounded-xl overflow-hidden border border-white/5 hover:border-brand-gold/50 transition duration-300 group cursor-pointer reveal flex flex-col h-full shadow-lg" onclick="showPropertyDetail(${prop.id})">
+                    <div class="relative h-64 img-zoom-container">
+                        <img src="${prop.img}" alt="${prop.title}" class="w-full h-full object-cover img-zoom">
+                        <div class="absolute top-4 right-4 bg-brand-gold text-brand-dark text-xs font-bold px-3 py-1 rounded uppercase tracking-wider">
+                            For Sale
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-grow">
+                        <h4 class="text-2xl font-bold text-white mb-1">${prop.price}</h4>
+                        <p class="text-gray-400 text-sm mb-4"><i class="fas fa-map-marker-alt text-brand-gold mr-1"></i> ${prop.address}</p>
+                        
+                        <div class="flex justify-between text-gray-300 text-sm border-t border-white/10 pt-4 mt-auto mb-6">
+                            <span><i class="fas fa-bed mr-1 text-brand-gold"></i> ${prop.beds} Beds</span>
+                            <span><i class="fas fa-bath mr-1 text-brand-gold"></i> ${prop.baths} Baths</span>
+                            <span><i class="fas fa-car mr-1 text-brand-gold"></i> ${prop.garages} Garages</span>
+                        </div>
+                        
+                        <button class="w-full border border-white/20 text-white py-2 rounded hover:bg-brand-gold hover:text-brand-dark hover:border-brand-gold transition font-semibold">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFeaturedProperties() {
+            const container = document.getElementById('featured-properties-container');
+            const featured = properties.filter(p => p.featured).slice(0, 3);
+            container.innerHTML = featured.map(generatePropertyCard).join('');
+        }
+
+        function renderAllProperties() {
+            const container = document.getElementById('all-listings-container');
+            container.innerHTML = properties.map(generatePropertyCard).join('');
+        }
+
+        // --- Navigation Logic (Single Page App approach) ---
+        function navigate(viewId) {
+            // Hide all
+            document.getElementById('view-home').style.display = 'none';
+            document.getElementById('view-listings').style.display = 'none';
+            document.getElementById('view-detail').style.display = 'none';
+
+            // Show target
+            document.getElementById(`view-${viewId}`).style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'auto' });
+            
+            // Re-trigger animations
+            setTimeout(initScrollReveal, 100);
+        }
+
+        function showPropertyDetail(id) {
+            const prop = properties.find(p => p.id === id);
+            if (!prop) return;
+
+            const galleryImages = prop.gallery ? prop.gallery : [prop.img];
+            const galleryHTML = galleryImages.map((img, index) => 
+                `<div class="snap-center flex-shrink-0 w-[85%] md:w-[70%] aspect-video relative group cursor-pointer overflow-hidden rounded-xl shadow-lg border border-white/10 hover:border-brand-gold transition duration-300" onclick="openLightbox(${prop.id}, ${index})">
+                    <img src="${img}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700" alt="Gallery View ${index + 1}">
+                    <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition duration-300">
+                        <i class="fas fa-expand text-brand-gold text-4xl drop-shadow-md transform scale-75 group-hover:scale-100 transition duration-300"></i>
+                    </div>
+                </div>`
+            ).join('');
+
+            const container = document.getElementById('detail-content');
+            container.innerHTML = `
+                <!-- Main Header -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 reveal">
+                    <div>
+                        <h1 class="text-3xl md:text-5xl font-extrabold text-white mb-2">${prop.title}</h1>
+                        <p class="text-xl text-gray-400"><i class="fas fa-map-marker-alt text-brand-gold mr-2"></i>${prop.address}</p>
+                    </div>
+                    <div class="mt-4 md:mt-0">
+                        <h2 class="text-4xl font-extrabold text-brand-gold">${prop.price}</h2>
+                    </div>
+                </div>
+
+                <!-- Scrollable Image Gallery -->
+                <div class="relative mb-12 reveal delay-100 group">
+                    <div class="flex overflow-x-auto gap-4 snap-x snap-mandatory pb-4 hide-scrollbar">
+                        ${galleryHTML}
+                    </div>
+                    <div class="absolute top-1/2 left-4 transform -translate-y-1/2 bg-black/50 text-white w-10 h-10 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition pointer-events-none hidden md:flex">
+                        <i class="fas fa-chevron-left"></i>
+                    </div>
+                    <div class="absolute top-1/2 right-4 transform -translate-y-1/2 bg-black/50 text-white w-10 h-10 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition pointer-events-none hidden md:flex">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                    <p class="text-center text-gray-500 text-sm mt-2"><i class="fas fa-arrows-alt-h mr-2"></i>Swipe to view more</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                    <!-- Details Left -->
+                    <div class="lg:col-span-2 reveal">
+                        <div class="bg-brand-charcoal p-8 rounded-xl border border-white/5 mb-8">
+                            <h3 class="text-2xl font-bold text-white mb-6 border-b border-white/10 pb-4">Property Overview</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                                <div class="text-center">
+                                    <i class="fas fa-bed text-2xl text-brand-gold mb-2 block"></i>
+                                    <span class="text-white font-bold text-lg">${prop.beds}</span>
+                                    <span class="text-gray-400 block text-sm">Bedrooms</span>
+                                </div>
+                                <div class="text-center">
+                                    <i class="fas fa-bath text-2xl text-brand-gold mb-2 block"></i>
+                                    <span class="text-white font-bold text-lg">${prop.baths}</span>
+                                    <span class="text-gray-400 block text-sm">Bathrooms</span>
+                                </div>
+                                <div class="text-center">
+                                    <i class="fas fa-car text-2xl text-brand-gold mb-2 block"></i>
+                                    <span class="text-white font-bold text-lg">${prop.garages}</span>
+                                    <span class="text-gray-400 block text-sm">Garages</span>
+                                </div>
+                                <div class="text-center">
+                                    <i class="fas fa-vector-square text-2xl text-brand-gold mb-2 block"></i>
+                                    <span class="text-white font-bold text-lg">${prop.sqmt}</span>
+                                    <span class="text-gray-400 block text-sm">Square Meters</span>
+                                </div>
+                            </div>
+                            
+                            <h3 class="text-xl font-bold text-white mb-4">Description</h3>
+                            <p class="text-gray-300 leading-relaxed mb-6">
+                                ${prop.desc} Don't miss this opportunity to acquire a prime piece of real estate designed for the ultimate luxury lifestyle.
+                            </p>
+                        </div>
+
+                        <!-- Map Placeholder -->
+                        <div class="bg-brand-charcoal p-8 rounded-xl border border-white/5">
+                            <h3 class="text-2xl font-bold text-white mb-6">Location</h3>
+                            <div class="w-full h-64 bg-brand-dark rounded-lg flex items-center justify-center border border-white/10">
+                                <div class="text-center text-gray-500">
+                                    <i class="fas fa-map text-4xl mb-2 text-brand-gold/50"></i>
+                                    <p>Interactive Map Integration</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar Sticky -->
+                    <div class="lg:col-span-1 reveal delay-100">
+                        <div class="bg-brand-charcoal p-8 rounded-xl border border-brand-gold/30 sticky top-28 shadow-[0_0_30px_rgba(212,175,55,0.05)]">
+                            <div class="flex items-center mb-6 border-b border-white/10 pb-6">
+                                <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=150" class="w-16 h-16 rounded-full object-cover mr-4" alt="John Smith">
+                                <div>
+                                    <h4 class="text-white font-bold text-lg">John Smith</h4>
+                                    <p class="text-brand-gold text-sm">Lead Agent</p>
+                                </div>
+                            </div>
+                            
+                            <h3 class="text-xl font-bold text-white mb-4">Book a Viewing</h3>
+                            <form onsubmit="handleFormSubmit(event)" class="space-y-4">
+                                <input type="text" placeholder="Name" required class="w-full bg-brand-dark border border-white/10 p-3 rounded text-white text-sm focus:outline-none focus:border-brand-gold transition">
+                                <input type="tel" placeholder="Phone" required class="w-full bg-brand-dark border border-white/10 p-3 rounded text-white text-sm focus:outline-none focus:border-brand-gold transition">
+                                <input type="email" placeholder="Email" required class="w-full bg-brand-dark border border-white/10 p-3 rounded text-white text-sm focus:outline-none focus:border-brand-gold transition">
+                                <button type="submit" class="w-full bg-brand-gold text-brand-dark font-bold py-3 rounded hover:bg-brand-goldhover transition mt-2">
+                                    Request Schedule
+                                </button>
+                                <button type="button" class="w-full border border-[#25D366] text-[#25D366] font-bold py-3 rounded hover:bg-[#25D366] hover:text-brand-dark transition mt-2 flex justify-center items-center">
+                                    <i class="fab fa-whatsapp text-lg mr-2"></i> WhatsApp Me
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Speed Tour Video Section (Bottom) -->
+                <div class="mt-16 pt-16 border-t border-white/10 reveal">
+                    <div class="text-center mb-8">
+                        <h2 class="text-brand-gold font-bold tracking-widest uppercase mb-2">Cinematic Experience</h2>
+                        <h3 class="text-3xl md:text-4xl font-extrabold text-white">SPEED TOUR</h3>
+                    </div>
+                    <div class="w-full max-w-5xl mx-auto h-[300px] md:h-[600px] bg-brand-charcoal rounded-xl border border-white/10 flex items-center justify-center relative overflow-hidden group cursor-pointer shadow-2xl">
+                        <!-- Background Image for Video Thumbnail -->
+                        <img src="${prop.img}" class="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-105 transition duration-700" alt="Video Thumbnail">
+                        <div class="absolute inset-0 bg-brand-dark/40 group-hover:bg-brand-dark/20 transition duration-300"></div>
+                        
+                        <!-- Play Button Overlay -->
+                        <div class="relative z-10 text-center transform group-hover:scale-110 transition duration-300">
+                            <div class="w-20 h-20 bg-brand-gold rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(212,175,55,0.4)]">
+                                <i class="fas fa-play text-brand-dark text-3xl ml-2"></i>
+                            </div>
+                            <p class="text-white font-bold tracking-wider uppercase text-sm drop-shadow-md">Watch Property Tour</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            navigate('detail');
+        }
+
+        // --- Utils & Effects ---
+        function scrollToContact() {
+            document.getElementById('contact-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const toast = document.getElementById('toast');
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
+            e.target.reset();
+        }
+
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+        
+        function toggleMobileMenu() {
+            mobileMenu.classList.toggle('hidden');
+        }
+
+        // Navbar blur on scroll
+        function setupNavbarScroll() {
+            window.addEventListener('scroll', () => {
+                const nav = document.getElementById('navbar');
+                if (window.scrollY > 50) {
+                    nav.classList.add('shadow-lg');
+                } else {
+                    nav.classList.remove('shadow-lg');
+                }
+            });
+        }
+
+        // --- Lightbox Logic ---
+        function openLightbox(propId, index) {
+            const prop = properties.find(p => p.id === propId);
+            if (!prop) return;
+            
+            currentLightboxImages = prop.gallery || [prop.img];
+            currentImageIndex = index;
+            
+            const lb = document.getElementById('lightbox');
+            lb.classList.remove('hidden');
+            lb.classList.add('flex');
+            // Trigger reflow for animation
+            void lb.offsetWidth;
+            lb.classList.remove('opacity-0');
+            document.body.classList.add('no-scroll');
+            
+            updateLightboxView();
+        }
+
+        function closeLightbox() {
+            const lb = document.getElementById('lightbox');
+            lb.classList.add('opacity-0');
+            setTimeout(() => {
+                lb.classList.add('hidden');
+                lb.classList.remove('flex');
+                document.body.classList.remove('no-scroll');
+            }, 300);
+            resetZoom();
+        }
+
+        function changeLightboxImage(step) {
+            currentImageIndex += step;
+            if (currentImageIndex >= currentLightboxImages.length) currentImageIndex = 0;
+            if (currentImageIndex < 0) currentImageIndex = currentLightboxImages.length - 1;
+            resetZoom();
+            updateLightboxView();
+        }
+
+        function updateLightboxView() {
+            document.getElementById('lightbox-img').src = currentLightboxImages[currentImageIndex];
+            document.getElementById('lightbox-counter').innerText = `${currentImageIndex + 1} / ${currentLightboxImages.length}`;
+        }
+
+        function resetZoom() {
+            imgScale = 1; translateX = 0; translateY = 0;
+            applyTransform();
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (document.getElementById('lightbox').classList.contains('hidden')) return;
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowRight') changeLightboxImage(1);
+            if (e.key === 'ArrowLeft') changeLightboxImage(-1);
+        });
+
+        // Zoom & Pan Mechanics
+        const lbContainer = document.getElementById('lightbox-container');
+        const lbImg = document.getElementById('lightbox-img');
+
+        // Wheel Zoom
+        lbContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY * -0.005;
+            const newScale = Math.min(Math.max(1, imgScale + delta), 4);
+            if (newScale === 1) { translateX = 0; translateY = 0; }
+            imgScale = newScale;
+            applyTransform();
+        });
+
+        // Double click/tap Zoom
+        lbImg.addEventListener('dblclick', () => {
+            if (imgScale > 1) { resetZoom(); } 
+            else { imgScale = 2.5; applyTransform(); }
+        });
+
+        // Pan Support (Mouse)
+        lbContainer.addEventListener('mousedown', (e) => {
+            if (imgScale > 1) {
+                isDragging = true;
+                startX = e.clientX - translateX;
+                startY = e.clientY - translateY;
+            }
+        });
+        lbContainer.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            applyTransform();
+        });
+        lbContainer.addEventListener('mouseup', () => isDragging = false);
+        lbContainer.addEventListener('mouseleave', () => isDragging = false);
+
+        // Pan Support (Touch/Mobile)
+        lbContainer.addEventListener('touchstart', (e) => {
+            if (imgScale > 1 && e.touches.length === 1) {
+                isDragging = true;
+                startX = e.touches[0].clientX - translateX;
+                startY = e.touches[0].clientY - translateY;
+            }
+        });
+        lbContainer.addEventListener('touchmove', (e) => {
+            if (!isDragging || e.touches.length !== 1) return;
+            translateX = e.touches[0].clientX - startX;
+            translateY = e.touches[0].clientY - startY;
+            applyTransform();
+        });
+        lbContainer.addEventListener('touchend', () => isDragging = false);
+
+        function applyTransform() {
+            lbImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${imgScale})`;
+            if (imgScale > 1) {
+                lbImg.style.cursor = isDragging ? 'grabbing' : 'grab';
+            } else {
+                lbImg.style.cursor = 'zoom-in';
+            }
+        }
+
+        // Scroll Reveal Observer
+        function initScrollReveal() {
+            const reveals = document.querySelectorAll('.reveal');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        // Optional: Unobserve after reveal for one-time animation
+                        // observer.unobserve(entry.target); 
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: "0px 0px -50px 0px"
+            });
+
+            reveals.forEach(element => {
+                observer.observe(element);
+            });
+        }
+    </script>
+</body>
+</html>
